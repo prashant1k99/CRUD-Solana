@@ -10,6 +10,12 @@ import { useCluster } from '../cluster/cluster-data-access'
 import { useAnchorProvider } from '../solana/solana-provider'
 import { useTransactionToast } from '../ui/ui-layout'
 
+interface CreateEntryArgs {
+  title: string,
+  message: string,
+  owner: PublicKey,
+}
+
 export function useCrudappProgram() {
   const { connection } = useConnection()
   const { cluster } = useCluster()
@@ -51,12 +57,6 @@ export function useCrudappProgram() {
   }
 }
 
-interface CreateEntryArgs {
-  title: string,
-  message: string,
-  owner: PublicKey,
-}
-
 export function useCrudappProgramAccount({ account }: { account: PublicKey }) {
   const { cluster } = useCluster()
   const transactionToast = useTransactionToast()
@@ -81,9 +81,9 @@ export function useCrudappProgramAccount({ account }: { account: PublicKey }) {
     }
   })
 
-  const deleteEntry = useMutation({
+  const deleteEntry = useMutation<string, Error, CreateEntryArgs>({
     mutationKey: ['crudapp', 'delete', { cluster }],
-    mutationFn: (title: string) => {
+    mutationFn: async ({ title }) => {
       return program.methods.deleteJournalEntry(title).rpc()
     },
     onSuccess: (signature) => {
