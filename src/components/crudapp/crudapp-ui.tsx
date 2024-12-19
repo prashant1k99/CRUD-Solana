@@ -131,7 +131,8 @@ function CrudappCard({ account }: { account: PublicKey }) {
   }
 
   const handleDeleteSubmit = () => {
-    if (publicKey && isFormValid) {
+    console.log("Deleting Entry")
+    if (publicKey) {
       deleteEntry.mutateAsync({
         title,
         message,
@@ -168,12 +169,14 @@ function CrudappCard({ account }: { account: PublicKey }) {
             {!modifyMessage ? (
               <>
                 <button onClick={handleUpdate} className='btn lg:btn-md btn-primary'>Update Entry</button>
-                <button onClick={handleDeleteSubmit} className='btn lg:btn-md btn-error'>Delete Entry</button>
+                <button onClick={handleDeleteSubmit} disabled={deleteEntry.isPending} className='btn lg:btn-md btn-error'>Delete Entry</button>
               </>
             ) : (
               <>
-                <button onClick={handleUpdateSubmit} className='btn lg:btn-md btn-primary'>Update Entry</button>
-                <button onClick={() => setModifyMessage(false)} className='btn lg:btn-md btn-error'>Cancel</button>
+                <button onClick={handleUpdateSubmit} disabled={updateEntry.isPending} className='btn lg:btn-md btn-primary'>
+                  Update Entry {updateEntry.isPending && '...'}
+                </button>
+                <button onClick={() => setModifyMessage(false)} disabled={updateEntry.isPending} className='btn lg:btn-md btn-error'>Cancel</button>
               </>
             )}
           </div>
