@@ -20,7 +20,7 @@ export function useCrudappProgram() {
 
   const accounts = useQuery({
     queryKey: ['crudapp', 'all', { cluster }],
-    queryFn: () => program.account.crudapp.all(),
+    queryFn: () => program.account.journalEntryState.all(),
   })
 
   const getProgramAccount = useQuery({
@@ -28,15 +28,18 @@ export function useCrudappProgram() {
     queryFn: () => connection.getParsedAccountInfo(programId),
   })
 
-  const initialize = useMutation({
-    mutationKey: ['crudapp', 'initialize', { cluster }],
-    mutationFn: (keypair: Keypair) =>
-      program.methods.initialize().accounts({ crudapp: keypair.publicKey }).signers([keypair]).rpc(),
+  const createEntry = useMutation<string, Error, CreateEntryArgs>({
+    mutationKey: ['crudapp', 'create', { cluster }],
+    mutationFn: async ({ title, message }) => {
+      return program.methods.createJournalEntry(title, message).rpc()
+    },
     onSuccess: (signature) => {
       transactionToast(signature)
-      return accounts.refetch()
+      accounts.refetch()
     },
-    onError: () => toast.error('Failed to initialize account'),
+    onError: (error) => {
+      toast.error("Error creating entry: " + error.message)
+    }
   })
 
   return {
@@ -44,8 +47,14 @@ export function useCrudappProgram() {
     programId,
     accounts,
     getProgramAccount,
-    initialize,
+    createEntry
   }
+}
+
+interface CreateEntryArgs {
+  title: string,
+  message: string,
+  owner: PublicKey,
 }
 
 export function useCrudappProgramAccount({ account }: { account: PublicKey }) {
@@ -55,50 +64,40 @@ export function useCrudappProgramAccount({ account }: { account: PublicKey }) {
 
   const accountQuery = useQuery({
     queryKey: ['crudapp', 'fetch', { cluster, account }],
-    queryFn: () => program.account.crudapp.fetch(account),
+    queryFn: () => program.account.journalEntryState.fetch(account),
   })
 
-  const closeMutation = useMutation({
-    mutationKey: ['crudapp', 'close', { cluster, account }],
-    mutationFn: () => program.methods.close().accounts({ crudapp: account }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx)
-      return accounts.refetch()
+  const updateEntry = useMutation<string, Error, CreateEntryArgs>({
+    mutationKey: ['crudapp', 'update', { cluster }],
+    mutationFn: async ({ title, message }) => {
+      return program.methods.updateJournalEntry(title, message).rpc()
     },
+    onSuccess: (signature) => {
+      transactionToast(signature)
+      accounts.refetch()
+    },
+    onError: (error) => {
+      toast.error("Error creating entry: " + error.message)
+    }
   })
 
-  const decrementMutation = useMutation({
-    mutationKey: ['crudapp', 'decrement', { cluster, account }],
-    mutationFn: () => program.methods.decrement().accounts({ crudapp: account }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx)
-      return accountQuery.refetch()
+  const deleteEntry = useMutation({
+    mutationKey: ['crudapp', 'delete', { cluster }],
+    mutationFn: (title: string) => {
+      return program.methods.deleteJournalEntry(title).rpc()
     },
-  })
-
-  const incrementMutation = useMutation({
-    mutationKey: ['crudapp', 'increment', { cluster, account }],
-    mutationFn: () => program.methods.increment().accounts({ crudapp: account }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx)
-      return accountQuery.refetch()
+    onSuccess: (signature) => {
+      transactionToast(signature)
+      accounts.refetch()
     },
-  })
-
-  const setMutation = useMutation({
-    mutationKey: ['crudapp', 'set', { cluster, account }],
-    mutationFn: (value: number) => program.methods.set(value).accounts({ crudapp: account }).rpc(),
-    onSuccess: (tx) => {
-      transactionToast(tx)
-      return accountQuery.refetch()
-    },
+    onError: (error) => {
+      toast.error("Error creating entry: " + error.message)
+    }
   })
 
   return {
     accountQuery,
-    closeMutation,
-    decrementMutation,
-    incrementMutation,
-    setMutation,
+    updateEntry,
+    deleteEntry
   }
 }
