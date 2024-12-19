@@ -139,7 +139,6 @@ function CrudappCard({ account }: { account: PublicKey }) {
         owner: publicKey
       })
     }
-
   }
 
   if (!publicKey) {
